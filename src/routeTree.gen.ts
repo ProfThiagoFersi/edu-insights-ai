@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppProfessoresRouteImport } from './routes/app.professores'
 import { Route as AppIaRouteImport } from './routes/app.ia'
 import { Route as AppBuscaAtivaRouteImport } from './routes/app.busca-ativa'
 import { Route as AppAlunosRouteImport } from './routes/app.alunos'
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfessoresRoute = AppProfessoresRouteImport.update({
+  id: '/professores',
+  path: '/professores',
   getParentRoute: () => AppRoute,
 } as any)
 const AppIaRoute = AppIaRouteImport.update({
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
   '/app/ia': typeof AppIaRoute
+  '/app/professores': typeof AppProfessoresRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
   '/app/ia': typeof AppIaRoute
+  '/app/professores': typeof AppProfessoresRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
   '/app/ia': typeof AppIaRoute
+  '/app/professores': typeof AppProfessoresRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -89,9 +98,17 @@ export interface FileRouteTypes {
     | '/app/alunos'
     | '/app/busca-ativa'
     | '/app/ia'
+    | '/app/professores'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/app/alunos' | '/app/busca-ativa' | '/app/ia' | '/app'
+  to:
+    | '/'
+    | '/login'
+    | '/app/alunos'
+    | '/app/busca-ativa'
+    | '/app/ia'
+    | '/app/professores'
+    | '/app'
   id:
     | '__root__'
     | '/'
@@ -100,6 +117,7 @@ export interface FileRouteTypes {
     | '/app/alunos'
     | '/app/busca-ativa'
     | '/app/ia'
+    | '/app/professores'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -139,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/professores': {
+      id: '/app/professores'
+      path: '/professores'
+      fullPath: '/app/professores'
+      preLoaderRoute: typeof AppProfessoresRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/ia': {
       id: '/app/ia'
       path: '/ia'
@@ -167,6 +192,7 @@ interface AppRouteChildren {
   AppAlunosRoute: typeof AppAlunosRoute
   AppBuscaAtivaRoute: typeof AppBuscaAtivaRoute
   AppIaRoute: typeof AppIaRoute
+  AppProfessoresRoute: typeof AppProfessoresRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -174,6 +200,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAlunosRoute: AppAlunosRoute,
   AppBuscaAtivaRoute: AppBuscaAtivaRoute,
   AppIaRoute: AppIaRoute,
+  AppProfessoresRoute: AppProfessoresRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -187,3 +214,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
