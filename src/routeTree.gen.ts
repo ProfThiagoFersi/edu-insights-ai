@@ -13,10 +13,16 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppTurmasRouteImport } from './routes/app.turmas'
+import { Route as AppRiscoRouteImport } from './routes/app.risco'
+import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
 import { Route as AppProfessoresRouteImport } from './routes/app.professores'
+import { Route as AppImportarRouteImport } from './routes/app.importar'
 import { Route as AppIaRouteImport } from './routes/app.ia'
+import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
 import { Route as AppBuscaAtivaRouteImport } from './routes/app.busca-ativa'
 import { Route as AppAlunosRouteImport } from './routes/app.alunos'
+import { Route as AppAlertasRouteImport } from './routes/app.alertas'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -38,14 +44,39 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTurmasRoute = AppTurmasRouteImport.update({
+  id: '/turmas',
+  path: '/turmas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRiscoRoute = AppRiscoRouteImport.update({
+  id: '/risco',
+  path: '/risco',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfessoresRoute = AppProfessoresRouteImport.update({
   id: '/professores',
   path: '/professores',
   getParentRoute: () => AppRoute,
 } as any)
+const AppImportarRoute = AppImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppIaRoute = AppIaRouteImport.update({
   id: '/ia',
   path: '/ia',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBuscaAtivaRoute = AppBuscaAtivaRouteImport.update({
@@ -58,24 +89,41 @@ const AppAlunosRoute = AppAlunosRouteImport.update({
   path: '/alunos',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAlertasRoute = AppAlertasRouteImport.update({
+  id: '/alertas',
+  path: '/alertas',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/alertas': typeof AppAlertasRoute
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/ia': typeof AppIaRoute
+  '/app/importar': typeof AppImportarRoute
   '/app/professores': typeof AppProfessoresRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/risco': typeof AppRiscoRoute
+  '/app/turmas': typeof AppTurmasRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/app/alertas': typeof AppAlertasRoute
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/ia': typeof AppIaRoute
+  '/app/importar': typeof AppImportarRoute
   '/app/professores': typeof AppProfessoresRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/risco': typeof AppRiscoRoute
+  '/app/turmas': typeof AppTurmasRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -83,10 +131,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/alertas': typeof AppAlertasRoute
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/ia': typeof AppIaRoute
+  '/app/importar': typeof AppImportarRoute
   '/app/professores': typeof AppProfessoresRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/risco': typeof AppRiscoRoute
+  '/app/turmas': typeof AppTurmasRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -95,29 +149,47 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/app/alertas'
     | '/app/alunos'
     | '/app/busca-ativa'
+    | '/app/configuracoes'
     | '/app/ia'
+    | '/app/importar'
     | '/app/professores'
+    | '/app/relatorios'
+    | '/app/risco'
+    | '/app/turmas'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/app/alertas'
     | '/app/alunos'
     | '/app/busca-ativa'
+    | '/app/configuracoes'
     | '/app/ia'
+    | '/app/importar'
     | '/app/professores'
+    | '/app/relatorios'
+    | '/app/risco'
+    | '/app/turmas'
     | '/app'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/login'
+    | '/app/alertas'
     | '/app/alunos'
     | '/app/busca-ativa'
+    | '/app/configuracoes'
     | '/app/ia'
+    | '/app/importar'
     | '/app/professores'
+    | '/app/relatorios'
+    | '/app/risco'
+    | '/app/turmas'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +229,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/turmas': {
+      id: '/app/turmas'
+      path: '/turmas'
+      fullPath: '/app/turmas'
+      preLoaderRoute: typeof AppTurmasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/risco': {
+      id: '/app/risco'
+      path: '/risco'
+      fullPath: '/app/risco'
+      preLoaderRoute: typeof AppRiscoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/relatorios': {
+      id: '/app/relatorios'
+      path: '/relatorios'
+      fullPath: '/app/relatorios'
+      preLoaderRoute: typeof AppRelatoriosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/professores': {
       id: '/app/professores'
       path: '/professores'
@@ -164,11 +257,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfessoresRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/importar': {
+      id: '/app/importar'
+      path: '/importar'
+      fullPath: '/app/importar'
+      preLoaderRoute: typeof AppImportarRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/ia': {
       id: '/app/ia'
       path: '/ia'
       fullPath: '/app/ia'
       preLoaderRoute: typeof AppIaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/configuracoes': {
+      id: '/app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/app/configuracoes'
+      preLoaderRoute: typeof AppConfiguracoesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/busca-ativa': {
@@ -185,22 +292,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAlunosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/alertas': {
+      id: '/app/alertas'
+      path: '/alertas'
+      fullPath: '/app/alertas'
+      preLoaderRoute: typeof AppAlertasRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAlertasRoute: typeof AppAlertasRoute
   AppAlunosRoute: typeof AppAlunosRoute
   AppBuscaAtivaRoute: typeof AppBuscaAtivaRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppIaRoute: typeof AppIaRoute
+  AppImportarRoute: typeof AppImportarRoute
   AppProfessoresRoute: typeof AppProfessoresRoute
+  AppRelatoriosRoute: typeof AppRelatoriosRoute
+  AppRiscoRoute: typeof AppRiscoRoute
+  AppTurmasRoute: typeof AppTurmasRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAlertasRoute: AppAlertasRoute,
   AppAlunosRoute: AppAlunosRoute,
   AppBuscaAtivaRoute: AppBuscaAtivaRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppIaRoute: AppIaRoute,
+  AppImportarRoute: AppImportarRoute,
   AppProfessoresRoute: AppProfessoresRoute,
+  AppRelatoriosRoute: AppRelatoriosRoute,
+  AppRiscoRoute: AppRiscoRoute,
+  AppTurmasRoute: AppTurmasRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
