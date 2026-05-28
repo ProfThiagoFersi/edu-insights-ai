@@ -17,7 +17,8 @@ import {
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+const NAV: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/alunos", label: "Alunos", icon: Users },
   { to: "/app/professores", label: "Professores", icon: GraduationCap },
@@ -29,7 +30,7 @@ const NAV = [
   { to: "/app/risco", label: "Alunos em Risco", icon: AlertTriangle },
   { to: "/app/importar", label: "Importar Planilhas", icon: Upload },
   { to: "/app/configuracoes", label: "Configurações", icon: Settings },
-] as const;
+];
 
 export function AppShell() {
   const [open, setOpen] = useState(false);
@@ -60,7 +61,7 @@ export function AppShell() {
             return (
               <Link
                 key={item.to}
-                to={item.to}
+                to={item.to as never}
                 onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   active
