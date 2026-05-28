@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppBuscaAtivaRouteImport } from './routes/app.busca-ativa'
 import { Route as AppAlunosRouteImport } from './routes/app.alunos'
 
 const LoginRoute = LoginRouteImport.update({
@@ -35,6 +36,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBuscaAtivaRoute = AppBuscaAtivaRouteImport.update({
+  id: '/busca-ativa',
+  path: '/busca-ativa',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAlunosRoute = AppAlunosRouteImport.update({
   id: '/alunos',
   path: '/alunos',
@@ -46,12 +52,14 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/alunos': typeof AppAlunosRoute
+  '/app/busca-ativa': typeof AppBuscaAtivaRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/app/alunos': typeof AppAlunosRoute
+  '/app/busca-ativa': typeof AppBuscaAtivaRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -60,14 +68,28 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/alunos': typeof AppAlunosRoute
+  '/app/busca-ativa': typeof AppBuscaAtivaRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/login' | '/app/alunos' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/app/alunos'
+    | '/app/busca-ativa'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/app/alunos' | '/app'
-  id: '__root__' | '/' | '/app' | '/login' | '/app/alunos' | '/app/'
+  to: '/' | '/login' | '/app/alunos' | '/app/busca-ativa' | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/login'
+    | '/app/alunos'
+    | '/app/busca-ativa'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/busca-ativa': {
+      id: '/app/busca-ativa'
+      path: '/busca-ativa'
+      fullPath: '/app/busca-ativa'
+      preLoaderRoute: typeof AppBuscaAtivaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/alunos': {
       id: '/app/alunos'
       path: '/alunos'
@@ -118,11 +147,13 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAlunosRoute: typeof AppAlunosRoute
+  AppBuscaAtivaRoute: typeof AppBuscaAtivaRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAlunosRoute: AppAlunosRoute,
+  AppBuscaAtivaRoute: AppBuscaAtivaRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
