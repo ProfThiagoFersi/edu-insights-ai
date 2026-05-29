@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Brain, Send, Sparkles, User } from "lucide-react";
+import { Brain, Send, Sparkles, User, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import { askIA } from "@/lib/ia.functions";
 
 export const Route = createFileRoute("/app/ia")({ component: IAChat });
 
@@ -15,29 +18,31 @@ const SUGESTOES = [
   "Resuma os indicadores da escola neste bimestre.",
 ];
 
-const RESPOSTA_DEMO = `Análise pedagógica — 7º ano
-
-• Frequência média: 89,2% (queda de 4,1 p.p. vs bimestre anterior)
-• Disciplinas com maior queda: Matemática (-0,6) e História (-0,4)
-• 11 alunos identificados em risco (3 críticos)
-
-Recomendações:
-1. Iniciar busca ativa imediata para os 3 alunos críticos.
-2. Reforço pedagógico em Matemática (2 encontros/semana por 4 semanas).
-3. Reunião com responsáveis dos alunos com frequência abaixo de 75%.
-4. Acompanhar evolução semanalmente via dashboard.`;
-
 function IAChat() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const ask = useServerFn(askIA);
 
-  const send = (text: string) => {
-    if (!text.trim()) return;
-    setMsgs((m) => [...m, { role: "user", content: text }]);
+  const send = async (text: string) => {
+    if (!text.trim() || loading) return;
+    const history = [...msgs, { role: "user" as const, content: text }];
+    setMsgs(history);
     setInput("");
-    setTimeout(() => {
-      setMsgs((m) => [...m, { role: "ai", content: RESPOSTA_DEMO }]);
-    }, 700);
+    setLoading(true);
+    try {
+      const payload = history.map((m) => ({
+        role: m.role === "ai" ? ("assistant" as const) : ("user" as const),
+        content: m.content,
+      }));
+      const res = await ask({ data: { messages: payload } });
+      setMsgs((m) => [...m, { role: "ai", content: res.content }]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao consultar a IA.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -77,13 +82,25 @@ function IAChat() {
                 </div>
               </div>
             ))}
+            {loading && (
+              <div className="flex gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
+                  <Brain className="h-4 w-4" />
+                </div>
+                <div className="flex items-center gap-2 pt-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Analisando...
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="mt-4 flex gap-2">
-        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Pergunte alguma coisa..." className="rounded-full" />
-        <Button type="submit" size="icon" className="h-10 w-10 rounded-full"><Send className="h-4 w-4" /></Button>
+        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Pergunte alguma coisa..." className="rounded-full" disabled={loading} />
+        <Button type="submit" size="icon" className="h-10 w-10 rounded-full" disabled={loading}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </Button>
       </form>
     </div>
   );

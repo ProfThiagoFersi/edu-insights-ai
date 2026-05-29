@@ -2,26 +2,87 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { GraduationCap, Sparkles } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Entrar — EduAnalytics IA" }] }),
   component: LoginPage,
 });
 
+const CARGOS = [
+  { value: "diretor", label: "Diretor(a)" },
+  { value: "vice_diretor", label: "Vice-diretor(a)" },
+  { value: "coordenador", label: "Coordenador(a) Pedagógico(a)" },
+  { value: "supervisor", label: "Supervisor(a)" },
+];
+
 function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nome, setNome] = useState("");
+  const [escolaNome, setEscolaNome] = useState("");
+  const [cargo, setCargo] = useState("coordenador");
 
-  const onSubmit = (e: FormEvent) => {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/app" });
+    });
+  }, [navigate]);
+
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      toast.success("Bem-vindo(a) de volta!");
-      navigate({ to: "/app" });
-    }, 600);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin + "/app",
+            data: { nome, escola_nome: escolaNome, cargo },
+          },
+        });
+        if (error) throw error;
+        toast.success("Conta criada!", { description: "Verifique seu e-mail para confirmar o acesso." });
+        setMode("login");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Bem-vindo(a) de volta!");
+        navigate({ to: "/app" });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao autenticar";
+      toast.error(msg.includes("Invalid login") ? "E-mail ou senha incorretos." : msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onGoogle = async () => {
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/app",
+    });
+    if (result.error) {
+      toast.error("Não foi possível entrar com Google.");
+      return;
+    }
+    if (result.redirected) return;
+    navigate({ to: "/app" });
   };
 
   return (
@@ -56,22 +117,44 @@ function LoginPage() {
             </div>
             <span className="font-display text-lg font-bold">EduAnalytics IA</span>
           </div>
-          <h1 className="font-display text-3xl font-bold">Bem-vindo de volta</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Acesse o painel da sua escola.</p>
+          <h1 className="font-display text-3xl font-bold">
+            {mode === "login" ? "Bem-vindo de volta" : "Criar sua conta"}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {mode === "login" ? "Acesse o painel da sua escola." : "Comece a gerir sua escola com IA."}
+          </p>
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
+            {mode === "signup" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome completo</Label>
+                  <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Maria Silva" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="escola">Nome da escola</Label>
+                  <Input id="escola" value={escolaNome} onChange={(e) => setEscolaNome(e.target.value)} placeholder="EMEF Vila Nova" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Select value={cargo} onValueChange={setCargo}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CARGOS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" placeholder="diretor@escola.com" required />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="diretor@escola.com" required />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
-                <a href="#" className="text-xs text-primary hover:underline">Esqueci minha senha</a>
-              </div>
-              <Input id="password" type="password" placeholder="••••••••" required />
+              <Label htmlFor="password">Senha</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" minLength={6} required />
             </div>
             <Button type="submit" className="w-full rounded-full" disabled={loading}>
-              {loading ? "Entrando..." : "Entrar"}
+              {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
             </Button>
           </form>
           <div className="my-6 flex items-center gap-3">
@@ -79,11 +162,18 @@ function LoginPage() {
             <span className="text-xs uppercase tracking-widest text-muted-foreground">ou</span>
             <div className="h-px flex-1 bg-border" />
           </div>
-          <Button variant="outline" className="w-full rounded-full" onClick={() => navigate({ to: "/app" })}>
+          <Button variant="outline" className="w-full rounded-full" onClick={onGoogle} type="button">
             Continuar com Google
           </Button>
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Não tem conta? <Link to="/login" className="font-medium text-primary hover:underline">Criar uma agora</Link>
+            {mode === "login" ? "Não tem conta? " : "Já tem conta? "}
+            <button
+              type="button"
+              onClick={() => setMode(mode === "login" ? "signup" : "login")}
+              className="font-medium text-primary hover:underline"
+            >
+              {mode === "login" ? "Criar uma agora" : "Entrar"}
+            </button>
           </p>
         </div>
       </div>
