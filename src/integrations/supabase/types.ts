@@ -14,16 +14,146 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alunos: {
+        Row: {
+          created_at: string
+          frequencia: number
+          id: string
+          media: number
+          motivo_risco: string
+          nome: string
+          owner_id: string
+          responsavel: string
+          status: string
+          telefone: string
+          turma_id: string | null
+          turma_nome: string
+        }
+        Insert: {
+          created_at?: string
+          frequencia?: number
+          id?: string
+          media?: number
+          motivo_risco?: string
+          nome: string
+          owner_id: string
+          responsavel?: string
+          status?: string
+          telefone?: string
+          turma_id?: string | null
+          turma_nome?: string
+        }
+        Update: {
+          created_at?: string
+          frequencia?: number
+          id?: string
+          media?: number
+          motivo_risco?: string
+          nome?: string
+          owner_id?: string
+          responsavel?: string
+          status?: string
+          telefone?: string
+          turma_id?: string | null
+          turma_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alunos_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          cargo: string
+          created_at: string
+          escola_nome: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cargo?: string
+          created_at?: string
+          escola_nome?: string
+          id: string
+          nome?: string
+          updated_at?: string
+        }
+        Update: {
+          cargo?: string
+          created_at?: string
+          escola_nome?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      turmas: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          owner_id: string
+          serie: string
+          turno: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          owner_id: string
+          serie?: string
+          turno?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          owner_id?: string
+          serie?: string
+          turno?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "diretor" | "vice_diretor" | "coordenador" | "supervisor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +280,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["diretor", "vice_diretor", "coordenador", "supervisor"],
+    },
   },
 } as const
