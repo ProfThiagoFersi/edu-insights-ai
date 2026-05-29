@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
@@ -13,9 +13,13 @@ import {
   Settings,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
 const NAV: NavItem[] = [
@@ -35,6 +39,28 @@ const NAV: NavItem[] = [
 export function AppShell() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<{ nome: string; escola_nome: string } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("nome, escola_nome")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setProfile(data));
+  }, [user]);
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Sessão encerrada");
+    navigate({ to: "/login" });
+  };
+
+  const displayName = profile?.nome || user?.email?.split("@")[0] || "Usuário";
+  const displaySchool = profile?.escola_nome || "Minha escola";
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -99,10 +125,13 @@ export function AppShell() {
             <div className="flex items-center gap-2">
               <div className="h-9 w-9 rounded-full" style={{ background: "var(--gradient-primary)" }} />
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-semibold leading-tight">Diretor(a)</p>
-                <p className="text-xs text-muted-foreground">EMEF Vila Nova</p>
+              <p className="text-sm font-semibold leading-tight">{displayName}</p>
+              <p className="text-xs text-muted-foreground">{displaySchool}</p>
               </div>
             </div>
+          <button onClick={handleLogout} title="Sair" className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
+            <LogOut className="h-5 w-5" />
+          </button>
           </div>
         </header>
         <main className="p-4 sm:p-6 lg:p-8">
