@@ -67,6 +67,39 @@ export type Database = {
           },
         ]
       }
+      professores: {
+        Row: {
+          created_at: string
+          disciplina: string
+          email: string
+          id: string
+          nome: string
+          owner_id: string
+          telefone: string
+          turmas: string
+        }
+        Insert: {
+          created_at?: string
+          disciplina?: string
+          email?: string
+          id?: string
+          nome: string
+          owner_id: string
+          telefone?: string
+          turmas?: string
+        }
+        Update: {
+          created_at?: string
+          disciplina?: string
+          email?: string
+          id?: string
+          nome?: string
+          owner_id?: string
+          telefone?: string
+          turmas?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           cargo: string
