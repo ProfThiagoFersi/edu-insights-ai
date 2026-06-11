@@ -72,6 +72,8 @@ function Risco() {
           filename="alunos-em-risco"
           columns={exportColumns}
           rows={exportData}
+          turmaOptions={Array.from(new Set(emRisco.map((a) => a.turma_nome).filter(Boolean)))}
+          turmaColumn="turma"
         />
       </div>
 
