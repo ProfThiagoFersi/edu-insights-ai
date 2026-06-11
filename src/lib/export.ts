@@ -1,5 +1,16 @@
 // Lightweight client-side export helpers for CSV and PDF (print-to-PDF).
 
+export type ExportTheme = "claro" | "escuro" | "marca";
+
+const THEMES: Record<
+  ExportTheme,
+  { bg: string; text: string; muted: string; brand: string; headBg: string; border: string; stripe: string }
+> = {
+  claro: { bg: "#ffffff", text: "#1a1f36", muted: "#6b7280", brand: "#4338ca", headBg: "#f3f4f6", border: "#e5e7eb", stripe: "#fafbfc" },
+  escuro: { bg: "#0f172a", text: "#e5e7eb", muted: "#94a3b8", brand: "#a5b4fc", headBg: "#1e293b", border: "#334155", stripe: "#152033" },
+  marca: { bg: "#ffffff", text: "#1a1f36", muted: "#6b7280", brand: "#4338ca", headBg: "#eef2ff", border: "#c7d2fe", stripe: "#f5f7ff" },
+};
+
 function escapeCsv(value: string | number) {
   const s = String(value ?? "");
   if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
