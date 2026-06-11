@@ -10,11 +10,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { BookOpen, Plus, Loader2, Users } from "lucide-react";
+import { BookOpen, Plus, Loader2, Users, FileDown, FileText } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { downloadCSV, exportPDF } from "@/lib/export";
 
 export const Route = createFileRoute("/app/turmas")({ component: Turmas });
 
@@ -49,6 +50,28 @@ function Turmas() {
     return { count: list.length, freq: Math.round(freq), media: media.toFixed(1) };
   };
 
+  const exportHeaders = ["Turma", "Série", "Turno", "Alunos", "Frequência média", "Média geral"];
+  const exportRows = () =>
+    turmas.map((t) => {
+      const s = statsFor(t.nome);
+      return [t.nome, t.serie || "—", t.turno, s.count, `${s.freq}%`, String(s.media)];
+    });
+
+  const onCSV = () => {
+    if (!turmas.length) { toast.error("Nenhuma turma para exportar."); return; }
+    downloadCSV("relatorio-turmas", exportHeaders, exportRows());
+    toast.success("CSV exportado!");
+  };
+  const onPDF = () => {
+    if (!turmas.length) { toast.error("Nenhuma turma para exportar."); return; }
+    exportPDF({
+      title: "Relatório — Turmas",
+      subtitle: `${turmas.length} turma(s) cadastrada(s)`,
+      headers: exportHeaders,
+      rows: exportRows(),
+    });
+  };
+
   const onSave = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -74,6 +97,9 @@ function Turmas() {
           <h1 className="text-2xl font-bold tracking-tight">Turmas</h1>
           <p className="text-sm text-muted-foreground">{turmas.length} turma(s) cadastrada(s)</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Button variant="outline" className="rounded-full" onClick={onCSV}><FileDown className="mr-2 h-4 w-4" /> CSV</Button>
+        <Button variant="outline" className="rounded-full" onClick={onPDF}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="rounded-full"><Plus className="mr-2 h-4 w-4" /> Nova turma</Button>
@@ -92,6 +118,7 @@ function Turmas() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {loading ? (
