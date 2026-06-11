@@ -25,10 +25,12 @@ export function exportPDF(opts: {
   subtitle?: string;
   headers: string[];
   rows: (string | number)[][];
+  theme?: ExportTheme;
 }) {
-  const { title, subtitle, headers, rows } = opts;
+  const { title, subtitle, headers, rows, theme = "claro" } = opts;
   const win = window.open("", "_blank");
   if (!win) return;
+  const t = THEMES[theme];
   const date = new Date().toLocaleString("pt-BR");
   const thead = headers.map((h) => `<th>${h}</th>`).join("");
   const tbody = rows
@@ -38,14 +40,14 @@ export function exportPDF(opts: {
   <title>${title}</title>
   <style>
     * { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
-    body { margin: 32px; color: #1a1f36; }
+    body { margin: 32px; color: ${t.text}; background: ${t.bg}; }
     h1 { font-size: 20px; margin: 0 0 4px; }
-    .sub { color: #6b7280; font-size: 12px; margin: 0 0 2px; }
-    .brand { color: #4338ca; font-weight: 700; font-size: 13px; letter-spacing: .5px; margin-bottom: 16px; }
+    .sub { color: ${t.muted}; font-size: 12px; margin: 0 0 2px; }
+    .brand { color: ${t.brand}; font-weight: 700; font-size: 13px; letter-spacing: .5px; margin-bottom: 16px; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 16px; }
-    th { text-align: left; background: #f3f4f6; padding: 8px 10px; border-bottom: 2px solid #e5e7eb; text-transform: uppercase; font-size: 10px; letter-spacing: .5px; color: #6b7280; }
-    td { padding: 8px 10px; border-bottom: 1px solid #eef0f3; }
-    tr:nth-child(even) td { background: #fafbfc; }
+    th { text-align: left; background: ${t.headBg}; padding: 8px 10px; border-bottom: 2px solid ${t.border}; text-transform: uppercase; font-size: 10px; letter-spacing: .5px; color: ${t.muted}; }
+    td { padding: 8px 10px; border-bottom: 1px solid ${t.border}; }
+    tr:nth-child(even) td { background: ${t.stripe}; }
     @media print { body { margin: 12px; } }
   </style></head><body>
     <div class="brand">EduAnalytics IA</div>
