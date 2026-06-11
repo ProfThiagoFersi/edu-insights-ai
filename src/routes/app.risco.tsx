@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Loader2, MessageCircle } from "lucide-react";
+import { AlertTriangle, Loader2, MessageCircle, FileDown, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { downloadCSV, exportPDF } from "@/lib/export";
 
 export const Route = createFileRoute("/app/risco")({ component: Risco });
 
@@ -34,6 +35,33 @@ function Risco() {
 
   const altos = emRisco.filter((a) => a.n === "alto").length;
 
+  const exportRows = () =>
+    emRisco.map((a) => [
+      a.nome,
+      a.turma_nome || "—",
+      `${a.frequencia}%`,
+      Number(a.media).toFixed(1),
+      a.n === "alto" ? "Alto" : "Médio",
+      a.responsavel || "—",
+      a.telefone || "—",
+    ]);
+  const exportHeaders = ["Aluno", "Turma", "Frequência", "Média", "Nível", "Responsável", "Telefone"];
+
+  const onCSV = () => {
+    if (!emRisco.length) { toast.error("Nenhum aluno em risco para exportar."); return; }
+    downloadCSV("alunos-em-risco", exportHeaders, exportRows());
+    toast.success("CSV exportado!");
+  };
+  const onPDF = () => {
+    if (!emRisco.length) { toast.error("Nenhum aluno em risco para exportar."); return; }
+    exportPDF({
+      title: "Relatório — Alunos em Risco",
+      subtitle: `${emRisco.length} aluno(s) · ${altos} risco alto · ${emRisco.length - altos} risco médio`,
+      headers: exportHeaders,
+      rows: exportRows(),
+    });
+  };
+
   const openWhatsApp = (tel: string, aluno: string) => {
     if (!tel) { toast.error("Telefone não cadastrado."); return; }
     const msg = `Olá, somos da equipe gestora da escola e gostaríamos de conversar sobre o acompanhamento pedagógico do(a) aluno(a) ${aluno}.`;
@@ -42,9 +70,15 @@ function Risco() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Alunos em risco</h1>
-        <p className="text-sm text-muted-foreground">Identificados automaticamente por baixa frequência ou média abaixo do esperado.</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Alunos em risco</h1>
+          <p className="text-sm text-muted-foreground">Identificados automaticamente por baixa frequência ou média abaixo do esperado.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" className="rounded-full" onClick={onCSV}><FileDown className="mr-2 h-4 w-4" /> CSV</Button>
+          <Button className="rounded-full" onClick={onPDF}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
