@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download } from "lucide-react";
@@ -35,12 +36,16 @@ export function ExportDialog({
   filename,
   columns,
   rows,
+  turmaOptions,
+  turmaColumn,
   triggerLabel = "Exportar",
 }: {
   title: string;
   filename: string;
   columns: ExportColumn[];
   rows: ExportRow[];
+  turmaOptions?: string[];
+  turmaColumn?: string;
   triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -49,9 +54,26 @@ export function ExportDialog({
   const [theme, setTheme] = useState<ExportTheme>("claro");
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>("Todos os dados");
   const [customPeriod, setCustomPeriod] = useState("");
+  const [selectedTurmas, setSelectedTurmas] = useState<string[]>([]);
 
   const toggle = (key: string) =>
     setSelected((s) => (s.includes(key) ? s.filter((k) => k !== key) : [...s, key]));
+
+  const toggleTurma = (nome: string) =>
+    setSelectedTurmas((s) =>
+      s.includes(nome) ? s.filter((n) => n !== nome) : [...s, nome]
+    );
+
+  const allTurmasSelected = turmaOptions && turmaOptions.length > 0 && selectedTurmas.length === turmaOptions.length;
+
+  const handleSelectAllTurmas = () => {
+    if (!turmaOptions) return;
+    if (allTurmasSelected) {
+      setSelectedTurmas([]);
+    } else {
+      setSelectedTurmas([...turmaOptions]);
+    }
+  };
 
   const periodLabel = period === "Personalizado" ? customPeriod.trim() || "Personalizado" : period;
 
@@ -65,9 +87,20 @@ export function ExportDialog({
       toast.error("Selecione ao menos uma coluna.");
       return;
     }
+
+    let filteredRows = rows;
+    if (turmaColumn && selectedTurmas.length > 0) {
+      filteredRows = rows.filter((r) => selectedTurmas.includes(String(r[turmaColumn])));
+    }
+
+    if (!filteredRows.length) {
+      toast.error("Nenhum registro corresponde aos filtros selecionados.");
+      return;
+    }
+
     const headers = cols.map((c) => c.label);
-    const dataRows = rows.map((r) => cols.map((c) => r[c.key] ?? "—"));
-    const subtitle = `Período: ${periodLabel} · ${rows.length} registro(s)`;
+    const dataRows = filteredRows.map((r) => cols.map((c) => r[c.key] ?? "—"));
+    const subtitle = `Período: ${periodLabel} · ${filteredRows.length} registro(s)`;
 
     if (format === "csv") {
       downloadCSV(filename, headers, dataRows);
@@ -85,10 +118,10 @@ export function ExportDialog({
           <Download className="mr-2 h-4 w-4" /> {triggerLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Opções de exportação</DialogTitle>
-          <DialogDescription>Escolha colunas, período e tema antes de gerar o arquivo.</DialogDescription>
+          <DialogDescription>Escolha colunas, turmas, período e tema antes de gerar o arquivo.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -103,6 +136,31 @@ export function ExportDialog({
               ))}
             </div>
           </div>
+
+          {turmaOptions && turmaOptions.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Turmas</Label>
+                <button
+                  type="button"
+                  onClick={handleSelectAllTurmas}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {allTurmasSelected ? "Desmarcar todas" : "Selecionar todas"}
+                </button>
+              </div>
+              <ScrollArea className="h-40 rounded-lg border p-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {turmaOptions.map((nome) => (
+                    <label key={nome} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/60">
+                      <Checkbox checked={selectedTurmas.includes(nome)} onCheckedChange={() => toggleTurma(nome)} />
+                      {nome}
+                    </label>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
