@@ -101,6 +101,8 @@ function Turmas() {
           filename="relatorio-turmas"
           columns={exportColumns}
           rows={exportData}
+          turmaOptions={turmas.map((t) => t.nome)}
+          turmaColumn="nome"
         />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
