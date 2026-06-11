@@ -1,5 +1,16 @@
 // Lightweight client-side export helpers for CSV and PDF (print-to-PDF).
 
+export type ExportTheme = "claro" | "escuro" | "marca";
+
+const THEMES: Record<
+  ExportTheme,
+  { bg: string; text: string; muted: string; brand: string; headBg: string; border: string; stripe: string }
+> = {
+  claro: { bg: "#ffffff", text: "#1a1f36", muted: "#6b7280", brand: "#4338ca", headBg: "#f3f4f6", border: "#e5e7eb", stripe: "#fafbfc" },
+  escuro: { bg: "#0f172a", text: "#e5e7eb", muted: "#94a3b8", brand: "#a5b4fc", headBg: "#1e293b", border: "#334155", stripe: "#152033" },
+  marca: { bg: "#ffffff", text: "#1a1f36", muted: "#6b7280", brand: "#4338ca", headBg: "#eef2ff", border: "#c7d2fe", stripe: "#f5f7ff" },
+};
+
 function escapeCsv(value: string | number) {
   const s = String(value ?? "");
   if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -25,10 +36,12 @@ export function exportPDF(opts: {
   subtitle?: string;
   headers: string[];
   rows: (string | number)[][];
+  theme?: ExportTheme;
 }) {
-  const { title, subtitle, headers, rows } = opts;
+  const { title, subtitle, headers, rows, theme = "claro" } = opts;
   const win = window.open("", "_blank");
   if (!win) return;
+  const t = THEMES[theme];
   const date = new Date().toLocaleString("pt-BR");
   const thead = headers.map((h) => `<th>${h}</th>`).join("");
   const tbody = rows
@@ -38,14 +51,14 @@ export function exportPDF(opts: {
   <title>${title}</title>
   <style>
     * { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
-    body { margin: 32px; color: #1a1f36; }
+    body { margin: 32px; color: ${t.text}; background: ${t.bg}; }
     h1 { font-size: 20px; margin: 0 0 4px; }
-    .sub { color: #6b7280; font-size: 12px; margin: 0 0 2px; }
-    .brand { color: #4338ca; font-weight: 700; font-size: 13px; letter-spacing: .5px; margin-bottom: 16px; }
+    .sub { color: ${t.muted}; font-size: 12px; margin: 0 0 2px; }
+    .brand { color: ${t.brand}; font-weight: 700; font-size: 13px; letter-spacing: .5px; margin-bottom: 16px; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 16px; }
-    th { text-align: left; background: #f3f4f6; padding: 8px 10px; border-bottom: 2px solid #e5e7eb; text-transform: uppercase; font-size: 10px; letter-spacing: .5px; color: #6b7280; }
-    td { padding: 8px 10px; border-bottom: 1px solid #eef0f3; }
-    tr:nth-child(even) td { background: #fafbfc; }
+    th { text-align: left; background: ${t.headBg}; padding: 8px 10px; border-bottom: 2px solid ${t.border}; text-transform: uppercase; font-size: 10px; letter-spacing: .5px; color: ${t.muted}; }
+    td { padding: 8px 10px; border-bottom: 1px solid ${t.border}; }
+    tr:nth-child(even) td { background: ${t.stripe}; }
     @media print { body { margin: 12px; } }
   </style></head><body>
     <div class="brand">EduAnalytics IA</div>
