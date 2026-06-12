@@ -23,6 +23,7 @@ import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes
 import { Route as AppBuscaAtivaRouteImport } from './routes/app.busca-ativa'
 import { Route as AppAlunosRouteImport } from './routes/app.alunos'
 import { Route as AppAlertasRouteImport } from './routes/app.alertas'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -94,11 +95,17 @@ const AppAlertasRoute = AppAlertasRouteImport.update({
   path: '/alertas',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/alertas': typeof AppAlertasRoute
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/alertas': typeof AppAlertasRoute
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/alertas': typeof AppAlertasRoute
   '/app/alunos': typeof AppAlunosRoute
   '/app/busca-ativa': typeof AppBuscaAtivaRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/app/admin'
     | '/app/alertas'
     | '/app/alunos'
     | '/app/busca-ativa'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/app/admin'
     | '/app/alertas'
     | '/app/alunos'
     | '/app/busca-ativa'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/app/admin'
     | '/app/alertas'
     | '/app/alunos'
     | '/app/busca-ativa'
@@ -299,10 +311,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAlertasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppAlertasRoute: typeof AppAlertasRoute
   AppAlunosRoute: typeof AppAlunosRoute
   AppBuscaAtivaRoute: typeof AppBuscaAtivaRoute
@@ -317,6 +337,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppAlertasRoute: AppAlertasRoute,
   AppAlunosRoute: AppAlunosRoute,
   AppBuscaAtivaRoute: AppBuscaAtivaRoute,

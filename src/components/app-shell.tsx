@@ -14,10 +14,12 @@ import {
   Menu,
   X,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
+import { useSuperAdmin } from "@/hooks/use-super-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -41,6 +43,7 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isSuperAdmin } = useSuperAdmin();
   const [profile, setProfile] = useState<{ nome: string; escola_nome: string } | null>(null);
 
   useEffect(() => {
@@ -81,7 +84,12 @@ export function AppShell() {
           </button>
         </div>
         <nav className="flex flex-col gap-0.5 p-3">
-          {NAV.map((item) => {
+          {[
+            ...NAV,
+            ...(isSuperAdmin
+              ? [{ to: "/app/admin", label: "Super Admin", icon: ShieldCheck } as NavItem]
+              : []),
+          ].map((item) => {
             const active = item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to);
             const Icon = item.icon;
             return (
