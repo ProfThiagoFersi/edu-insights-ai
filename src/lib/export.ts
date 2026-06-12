@@ -2,7 +2,7 @@
 
 export type ExportTheme = "claro" | "escuro" | "marca";
 
-const THEMES: Record<
+export const THEMES: Record<
   ExportTheme,
   { bg: string; text: string; muted: string; brand: string; headBg: string; border: string; stripe: string }
 > = {
@@ -15,6 +15,10 @@ function escapeCsv(value: string | number) {
   const s = String(value ?? "");
   if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
+}
+
+export function buildCSV(headers: string[], rows: (string | number)[][]) {
+  return [headers, ...rows].map((r) => r.map(escapeCsv).join(";")).join("\n");
 }
 
 export function downloadCSV(filename: string, headers: string[], rows: (string | number)[][]) {
