@@ -15,9 +15,9 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { downloadCSV, exportPDF, type ExportTheme } from "@/lib/export";
+import { downloadCSV, exportPDF, buildCSV, THEMES, type ExportTheme } from "@/lib/export";
 
 export type ExportColumn = { key: string; label: string };
 export type ExportRow = Record<string, string | number>;
@@ -77,30 +77,34 @@ export function ExportDialog({
 
   const periodLabel = period === "Personalizado" ? customPeriod.trim() || "Personalizado" : period;
 
+  const cols = columns.filter((c) => selected.includes(c.key));
+  let previewRows = rows;
+  if (turmaColumn && selectedTurmas.length > 0) {
+    previewRows = rows.filter((r) => selectedTurmas.includes(String(r[turmaColumn])));
+  }
+  const previewHeaders = cols.map((c) => c.label);
+  const previewData = previewRows.map((r) => cols.map((c) => r[c.key] ?? "—"));
+  const previewSubtitle = `Período: ${periodLabel} · ${previewRows.length} registro(s)`;
+  const PREVIEW_LIMIT = 8;
+  const t = THEMES[theme];
+
   const handleExport = () => {
     if (!rows.length) {
       toast.error("Nenhum dado para exportar.");
       return;
     }
-    const cols = columns.filter((c) => selected.includes(c.key));
     if (!cols.length) {
       toast.error("Selecione ao menos uma coluna.");
       return;
     }
-
-    let filteredRows = rows;
-    if (turmaColumn && selectedTurmas.length > 0) {
-      filteredRows = rows.filter((r) => selectedTurmas.includes(String(r[turmaColumn])));
-    }
-
+    const filteredRows = previewRows;
     if (!filteredRows.length) {
       toast.error("Nenhum registro corresponde aos filtros selecionados.");
       return;
     }
-
-    const headers = cols.map((c) => c.label);
-    const dataRows = filteredRows.map((r) => cols.map((c) => r[c.key] ?? "—"));
-    const subtitle = `Período: ${periodLabel} · ${filteredRows.length} registro(s)`;
+    const headers = previewHeaders;
+    const dataRows = previewData;
+    const subtitle = previewSubtitle;
 
     if (format === "csv") {
       downloadCSV(filename, headers, dataRows);
@@ -124,6 +128,7 @@ export function ExportDialog({
           <DialogDescription>Escolha colunas, turmas, período e tema antes de gerar o arquivo.</DialogDescription>
         </DialogHeader>
 
+        <ScrollArea className="max-h-[60vh] pr-3">
         <div className="space-y-5">
           <div className="space-y-2">
             <Label>Colunas</Label>
@@ -205,7 +210,55 @@ export function ExportDialog({
               </RadioGroup>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2"><Eye className="h-4 w-4" /> Pré-visualização</Label>
+            {!cols.length ? (
+              <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                Selecione ao menos uma coluna para ver a pré-visualização.
+              </p>
+            ) : !previewRows.length ? (
+              <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                Nenhum registro corresponde aos filtros selecionados.
+              </p>
+            ) : format === "csv" ? (
+              <pre className="max-h-56 overflow-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed">
+{buildCSV(previewHeaders, previewData.slice(0, PREVIEW_LIMIT).map((r) => r.map((c) => String(c))))}
+{previewData.length > PREVIEW_LIMIT ? `\n… +${previewData.length - PREVIEW_LIMIT} linha(s)` : ""}
+              </pre>
+            ) : (
+              <div className="overflow-hidden rounded-lg border" style={{ background: t.bg, color: t.text, borderColor: t.border }}>
+                <div className="px-4 pt-3" style={{ color: t.brand, fontWeight: 700, fontSize: 11, letterSpacing: ".5px" }}>EduAnalytics IA</div>
+                <div className="px-4" style={{ fontSize: 14, fontWeight: 700 }}>{title}</div>
+                <div className="px-4 pb-2" style={{ color: t.muted, fontSize: 10 }}>{previewSubtitle}</div>
+                <div className="max-h-56 overflow-auto">
+                  <table className="w-full" style={{ borderCollapse: "collapse", fontSize: 11 }}>
+                    <thead>
+                      <tr>
+                        {previewHeaders.map((h) => (
+                          <th key={h} style={{ textAlign: "left", background: t.headBg, color: t.muted, padding: "6px 10px", borderBottom: `2px solid ${t.border}`, textTransform: "uppercase", fontSize: 9, letterSpacing: ".5px" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData.slice(0, PREVIEW_LIMIT).map((r, i) => (
+                        <tr key={i} style={{ background: i % 2 ? t.stripe : t.bg }}>
+                          {r.map((c, j) => (
+                            <td key={j} style={{ padding: "6px 10px", borderBottom: `1px solid ${t.border}` }}>{String(c ?? "")}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {previewData.length > PREVIEW_LIMIT && (
+                  <div className="px-4 py-2" style={{ color: t.muted, fontSize: 10 }}>… +{previewData.length - PREVIEW_LIMIT} linha(s) no arquivo final</div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+        </ScrollArea>
 
         <DialogFooter>
           <Button variant="outline" className="rounded-full" onClick={() => setOpen(false)}>Cancelar</Button>
