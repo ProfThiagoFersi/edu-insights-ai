@@ -5,9 +5,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const ROLES = ["diretor", "vice_diretor", "coordenador", "supervisor", "super_admin"] as const;
 
 async function assertSuperAdmin(context: { supabase: any; userId: string }) {
-  const { data, error } = await context.supabase.rpc("is_super_admin", {
-    _user_id: context.userId,
-  });
+  const { data, error } = await context.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId)
+    .eq("role", "super_admin")
+    .maybeSingle();
   if (error) throw new Error("Falha ao verificar permissões.");
   if (!data) throw new Error("Acesso negado: apenas superadministradores.");
 }

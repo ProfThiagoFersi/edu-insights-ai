@@ -17,6 +17,15 @@ function escapeCsv(value: string | number) {
   return s;
 }
 
+function escapeHtml(value: string | number) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function buildCSV(headers: string[], rows: (string | number)[][]) {
   return [headers, ...rows].map((r) => r.map(escapeCsv).join(";")).join("\n");
 }
@@ -47,12 +56,12 @@ export function exportPDF(opts: {
   if (!win) return;
   const t = THEMES[theme];
   const date = new Date().toLocaleString("pt-BR");
-  const thead = headers.map((h) => `<th>${h}</th>`).join("");
+  const thead = headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("");
   const tbody = rows
-    .map((r) => `<tr>${r.map((c) => `<td>${String(c ?? "")}</td>`).join("")}</tr>`)
+    .map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`)
     .join("");
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8" />
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
   <style>
     * { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
     body { margin: 32px; color: ${t.text}; background: ${t.bg}; }
@@ -66,8 +75,8 @@ export function exportPDF(opts: {
     @media print { body { margin: 12px; } }
   </style></head><body>
     <div class="brand">EduAnalytics IA</div>
-    <h1>${title}</h1>
-    ${subtitle ? `<p class="sub">${subtitle}</p>` : ""}
+    <h1>${escapeHtml(title)}</h1>
+    ${subtitle ? `<p class="sub">${escapeHtml(subtitle)}</p>` : ""}
     <p class="sub">Gerado em ${date}</p>
     <table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>
     <script>window.onload = function(){ window.print(); }<\/script>
