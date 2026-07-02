@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Loader2, MessageCircle, Sparkles } from "lucide-react";
+import { AlertTriangle, Loader2, Mail, MessageCircle, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ExportDialog } from "@/components/export-dialog";
 import { useServerFn } from "@tanstack/react-start";
-import { gerarParecerAluno } from "@/lib/ia.functions";
+import { gerarComunicadoResponsavel, gerarParecerAluno } from "@/lib/ia.functions";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export const Route = createFileRoute("/app/risco")({ component: Risco });
 
@@ -96,6 +100,139 @@ function ParecerButton({ aluno, nivelRisco }: { aluno: Aluno; nivelRisco: "alto"
             </Button>
             <Button className="rounded-full" disabled={loading} onClick={handleGerar}>
               <Sparkles className="mr-1.5 h-3.5 w-3.5" /> {parecer ? "Gerar novamente" : "Gerar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function ComunicadoButton({ aluno, nivelRisco }: { aluno: Aluno; nivelRisco: "alto" | "medio" }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [canal, setCanal] = useState<"email" | "whatsapp">("whatsapp");
+  const [texto, setTexto] = useState("");
+  const [email, setEmail] = useState("");
+  const gerar = useServerFn(gerarComunicadoResponsavel);
+
+  const handleGerar = async () => {
+    setLoading(true);
+    try {
+      const res = await gerar({
+        data: {
+          nome: aluno.nome,
+          turma: aluno.turma_nome || "",
+          responsavel: aluno.responsavel || "",
+          frequencia: Number(aluno.frequencia),
+          media: Number(aluno.media),
+          nivel: nivelRisco,
+          motivo_risco: aluno.motivo_risco || "",
+          canal,
+        },
+      });
+      setTexto(res.content);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar comunicado.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const enviar = () => {
+    if (!texto.trim()) {
+      toast.error("Gere ou escreva o comunicado antes de enviar.");
+      return;
+    }
+    if (canal === "whatsapp") {
+      if (!aluno.telefone) {
+        toast.error("Telefone do responsável não cadastrado.");
+        return;
+      }
+      window.open(
+        `https://wa.me/${aluno.telefone.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`,
+        "_blank",
+      );
+    } else {
+      if (!email.trim()) {
+        toast.error("Informe o e-mail do responsável.");
+        return;
+      }
+      const assunto = `Acompanhamento pedagógico — ${aluno.nome}`;
+      window.open(
+        `mailto:${encodeURIComponent(email.trim())}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(texto)}`,
+        "_blank",
+      );
+    }
+  };
+
+  return (
+    <>
+      <Button size="sm" variant="outline" className="rounded-full" onClick={() => setOpen(true)}>
+        <Send className="mr-1.5 h-3.5 w-3.5" /> Comunicado
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Comunicado ao responsável — {aluno.nome}</DialogTitle>
+            <DialogDescription>
+              Gere um texto com IA, revise livremente e envie por WhatsApp ou e-mail.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Canal de envio</Label>
+              <RadioGroup
+                value={canal}
+                onValueChange={(v) => setCanal(v as "email" | "whatsapp")}
+                className="flex gap-4 pt-1"
+              >
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <RadioGroupItem value="whatsapp" /> WhatsApp
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <RadioGroupItem value="email" /> E-mail
+                </label>
+              </RadioGroup>
+            </div>
+
+            {canal === "email" && (
+              <div className="space-y-2">
+                <Label>E-mail do responsável</Label>
+                <Input
+                  type="email"
+                  placeholder="responsavel@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Texto do comunicado</Label>
+                <Button size="sm" variant="secondary" className="rounded-full" disabled={loading} onClick={handleGerar}>
+                  {loading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
+                  {texto ? "Gerar novamente" : "Gerar com IA"}
+                </Button>
+              </div>
+              <Textarea
+                rows={10}
+                placeholder="Clique em 'Gerar com IA' ou escreva o comunicado aqui..."
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button className="rounded-full" onClick={enviar}>
+              {canal === "whatsapp" ? <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> : <Mail className="mr-1.5 h-3.5 w-3.5" />}
+              Enviar por {canal === "whatsapp" ? "WhatsApp" : "e-mail"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -217,6 +354,7 @@ function Risco() {
                         <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> Contatar
                       </Button>
                       <ParecerButton aluno={a} nivelRisco={a.n as "alto" | "medio"} />
+                      <ComunicadoButton aluno={a} nivelRisco={a.n as "alto" | "medio"} />
                     </div>
                   </td>
                 </tr>

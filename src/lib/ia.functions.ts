@@ -24,6 +24,18 @@ const parecerSchema = z.object({
   historico: z.string().max(2000).optional().default(""),
 });
 
+const comunicadoSchema = z.object({
+  nome: z.string().min(1).max(200),
+  turma: z.string().max(200).optional().default(""),
+  responsavel: z.string().max(200).optional().default(""),
+  frequencia: z.number(),
+  media: z.number(),
+  nivel: z.enum(["alto", "medio"]),
+  motivo_risco: z.string().max(1000).optional().default(""),
+  parecer: z.string().max(6000).optional().default(""),
+  canal: z.enum(["email", "whatsapp"]),
+});
+
 const SYSTEM_PROMPT = `Você é a IA Pedagógica do EduAnalytics IA, uma plataforma de BI educacional para equipes gestoras escolares brasileiras (diretores, vice-diretores, coordenadores e supervisores).
 
 Responda sempre em português do Brasil, com tom profissional, objetivo e pedagógico.
@@ -59,6 +71,63 @@ export const askIA = createServerFn({ method: "POST" })
       const text = await response.text();
       console.error("AI gateway error:", response.status, text);
       throw new Error("Não foi possível gerar a resposta da IA.");
+    }
+
+    const json = await response.json();
+    const content: string = json.choices?.[0]?.message?.content ?? "";
+    return { content };
+  });
+
+export const gerarComunicadoResponsavel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => comunicadoSchema.parse(data))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("IA indisponível: chave não configurada.");
+
+    const canalInstrucoes =
+      data.canal === "whatsapp"
+        ? `Formato: mensagem de WhatsApp curta (até ~6 linhas), tom cordial e direto, sem cabeçalho de e-mail. Pode usar quebras de linha, mas nada de Markdown.`
+        : `Formato: e-mail formal com saudação, corpo e despedida. Comece com "Prezado(a) responsável," e finalize com "Atenciosamente, Equipe Gestora". Sem Markdown.`;
+
+    const userPrompt = `Redija um comunicado ao responsável pelo(a) aluno(a) abaixo, informando de forma acolhedora a situação escolar e convidando para uma conversa/acompanhamento. Não exponha dados sensíveis desnecessários nem termos técnicos internos (evite palavras como "risco alto", "média", percentuais crus). Foque em parceria família-escola.
+
+Dados:
+- Aluno(a): ${data.nome}
+- Turma: ${data.turma || "não informada"}
+- Responsável: ${data.responsavel || "responsável"}
+- Situação identificada: ${data.nivel === "alto" ? "requer atenção prioritária" : "requer acompanhamento"}
+- Contexto (uso interno, resuma em linguagem simples): frequência ${data.frequencia}%, média ${data.media.toFixed(1)}${data.motivo_risco ? `, motivo: ${data.motivo_risco}` : ""}
+${data.parecer ? `- Parecer pedagógico (base, não copiar literalmente): ${data.parecer}` : ""}
+
+${canalInstrucoes}
+Escreva apenas o texto do comunicado, pronto para envio.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (response.status === 429) {
+      throw new Error("Muitas solicitações. Aguarde um momento e tente novamente.");
+    }
+    if (response.status === 402) {
+      throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
+    }
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("AI gateway error:", response.status, text);
+      throw new Error("Não foi possível gerar o comunicado.");
     }
 
     const json = await response.json();
