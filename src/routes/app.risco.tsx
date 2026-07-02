@@ -1,10 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Loader2, MessageCircle } from "lucide-react";
+import { AlertTriangle, Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ExportDialog } from "@/components/export-dialog";
+import { useServerFn } from "@tanstack/react-start";
+import { gerarParecerAluno } from "@/lib/ia.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/app/risco")({ component: Risco });
 
@@ -14,6 +24,84 @@ function nivel(freq: number, media: number): "alto" | "medio" | null {
   if (freq < 75 || media < 6) return "alto";
   if (freq < 90 || media < 7) return "medio";
   return null;
+}
+
+function ParecerButton({ aluno, nivelRisco }: { aluno: Aluno; nivelRisco: "alto" | "medio" }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [parecer, setParecer] = useState("");
+  const gerar = useServerFn(gerarParecerAluno);
+
+  const handleGerar = async () => {
+    setLoading(true);
+    setParecer("");
+    try {
+      const res = await gerar({
+        data: {
+          nome: aluno.nome,
+          turma: aluno.turma_nome || "",
+          frequencia: Number(aluno.frequencia),
+          media: Number(aluno.media),
+          nivel: nivelRisco,
+          motivo_risco: aluno.motivo_risco || "",
+        },
+      });
+      setParecer(res.content);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar parecer.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openAndGenerate = () => {
+    setOpen(true);
+    if (!parecer && !loading) void handleGerar();
+  };
+
+  return (
+    <>
+      <Button size="sm" variant="secondary" className="rounded-full" onClick={openAndGenerate}>
+        <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Parecer IA
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Parecer pedagógico — {aluno.nome}</DialogTitle>
+            <DialogDescription>
+              Gerado por IA com base em frequência, média e histórico de risco. Revise antes de usar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[55vh] overflow-y-auto rounded-lg border bg-muted/30 p-4">
+            {loading ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Gerando parecer...
+              </div>
+            ) : parecer ? (
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{parecer}</pre>
+            ) : (
+              <p className="py-10 text-center text-sm text-muted-foreground">Nenhum parecer gerado ainda.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="rounded-full"
+              disabled={loading}
+              onClick={() => {
+                if (parecer) navigator.clipboard.writeText(parecer).then(() => toast.success("Parecer copiado!"));
+              }}
+            >
+              Copiar
+            </Button>
+            <Button className="rounded-full" disabled={loading} onClick={handleGerar}>
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" /> {parecer ? "Gerar novamente" : "Gerar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 function Risco() {
@@ -124,9 +212,12 @@ function Risco() {
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${a.n === "alto" ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"}`}>{a.n === "alto" ? "Alto" : "Médio"}</span>
                   </td>
                   <td className="py-3 pr-4">
-                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => openWhatsApp(a.telefone, a.nome)}>
-                      <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> Contatar
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" className="rounded-full" onClick={() => openWhatsApp(a.telefone, a.nome)}>
+                        <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> Contatar
+                      </Button>
+                      <ParecerButton aluno={a} nivelRisco={a.n as "alto" | "medio"} />
+                    </div>
                   </td>
                 </tr>
               ))}
